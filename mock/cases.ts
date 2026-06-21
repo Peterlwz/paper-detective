@@ -1,0 +1,55 @@
+import type { DetectiveCase } from "../types/case";
+
+export const mockCases: DetectiveCase[] = [
+  {
+    case_id: "case_001",
+    paper_id: "paper_001",
+    case_title: "PI3K/AKT 激活与索拉非尼耐药",
+    main_claim: "PI3K/AKT 通路激活导致肝癌索拉非尼耐药。",
+    difficulty: "easy",
+    evidence_required: 4,
+    recommended: 6,
+    estimated_minutes: 8,
+    involved_figures: ["Figure 1", "Figure 2"],
+    experiment_types: [
+      "resistant cell model",
+      "western blot",
+      "RNA sequencing",
+      "pathway enrichment",
+    ],
+  },
+  {
+    case_id: "case_002",
+    paper_id: "paper_001",
+    case_title: "AKT 抑制剂恢复药物敏感性",
+    main_claim: "AKT 抑制剂可以恢复肝癌细胞对索拉非尼的药物敏感性。",
+    difficulty: "medium",
+    evidence_required: 4,
+    recommended: 6,
+    estimated_minutes: 10,
+    involved_figures: ["Figure 3B", "Figure 4"],
+    experiment_types: [
+      "drug intervention",
+      "cell viability assay",
+      "apoptosis assay",
+      "colony formation assay",
+    ],
+  },
+  {
+    case_id: "case_003",
+    paper_id: "paper_001",
+    case_title: "联合治疗的体内治疗潜力",
+    main_claim: "索拉非尼联合 AKT 抑制剂的治疗策略具有体内治疗潜力。",
+    difficulty: "hard",
+    evidence_required: 5,
+    recommended: 6,
+    estimated_minutes: 12,
+    involved_figures: ["Figure 4", "Figure 5"],
+    experiment_types: [
+      "combination therapy",
+      "xenograft model",
+      "tumor growth curve",
+      "immunohistochemistry",
+    ],
+  },
+];
