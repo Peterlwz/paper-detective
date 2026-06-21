@@ -1,3 +1,4 @@
+import { CorrectionPanel } from "@/components/CorrectionPanel";
 import type { DetectiveCase } from "@/types/case";
 import type { EvidenceItem } from "@/types/evidence";
 import {
@@ -73,6 +74,12 @@ export function VerdictReport({
             </p>
           ) : null}
         </div>
+        <CorrectionPanel
+          paperId={detectiveCase.paper_id}
+          caseId={detectiveCase.case_id}
+          targetType="verdict"
+          triggerLabel="对结案结论纠错 / 补充"
+        />
       </section>
 
       <section className="border border-[#cfd7cc] bg-white/80 p-6">
@@ -121,6 +128,13 @@ export function VerdictReport({
                 <p className="mt-3 text-sm leading-7 text-[#364641]">
                   {evidence.explanation}
                 </p>
+                <CorrectionPanel
+                  paperId={detectiveCase.paper_id}
+                  caseId={detectiveCase.case_id}
+                  evidenceId={evidence.id}
+                  targetType="evidence"
+                  compact={true}
+                />
               </div>
             </article>
           ))}

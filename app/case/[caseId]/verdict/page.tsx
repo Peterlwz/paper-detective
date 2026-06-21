@@ -37,7 +37,7 @@ function VerdictShell({
               href="/cases"
               className="border border-[#c7cec4] px-3 py-2 text-xs font-semibold text-[#52635d] transition hover:border-[#1d352f] hover:text-[#1d352f]"
             >
-              返回案件列表
+              挑战其他案件主线
             </Link>
           </div>
         </header>

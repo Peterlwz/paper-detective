@@ -16,8 +16,8 @@ import type { HintLevel } from "@/types/hint";
 import { matchEvidence } from "@/utils/matchEvidence";
 
 const resultTypeLabels: Record<ClickResult["result_type"], string> = {
-  valid_evidence: "有效证据",
-  related_info: "相关信息",
+  valid_evidence: "找到证据",
+  related_info: "相关背景",
   invalid_click: "无效点击",
 };
 
@@ -28,6 +28,10 @@ const resultToneClasses: Record<ClickResult["result_type"], string> = {
 };
 
 function formatScoreDelta(scoreDelta: number): string {
+  if (scoreDelta === 0) {
+    return "不变";
+  }
+
   if (scoreDelta > 0) {
     return `+${scoreDelta}`;
   }
@@ -193,6 +197,11 @@ export default function CasePage() {
 
   const foundCount = foundEvidenceIds.length;
   const visibleAttentionScore = Math.max(0, attentionScore);
+  const caseLineIndex = Math.max(
+    0,
+    mockCases.findIndex((item) => item.case_id === detectiveCase.case_id),
+  );
+  const caseLineLabel = `Case ${String(caseLineIndex + 1).padStart(2, "0")}`;
   const isCaseComplete =
     foundEvidenceIds.length === evidenceList.length && evidenceList.length > 0;
 
@@ -217,6 +226,55 @@ export default function CasePage() {
           totalCount={evidenceList.length}
         />
 
+        <section className="border-b border-[#d8ded4] py-6">
+          <div className="border border-[#cfd7cc] bg-white/80 p-5 shadow-[0_12px_30px_rgba(25,35,31,0.06)]">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-sm font-medium tracking-[0.18em] text-[#52635d] uppercase">
+                  本轮任务
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold text-[#14211d]">
+                  找出支持以下主张的关键证据：
+                </h2>
+                <div className="mt-4 border-l-4 border-[#1d352f] bg-[#edf2ef] px-4 py-4">
+                  <div className="text-sm font-semibold text-[#1d352f]">
+                    {detectiveCase.case_title}
+                  </div>
+                  <p className="mt-2 text-base leading-7 text-[#364641]">
+                    {detectiveCase.main_claim}
+                  </p>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-[#52635d]">
+                  你需要在正文和图表中点击可疑信息。命中核心证据后，它会进入顶部证据栏；点到背景信息不会收集，点错会扣注意力。
+                </p>
+                <p className="mt-2 text-sm leading-7 text-[#52635d]">
+                  这是当前论文的其中一条主线。完成后可以返回案件列表，挑战其他主线。
+                </p>
+              </div>
+              <div className="grid min-w-56 grid-cols-3 gap-2 text-center lg:grid-cols-1">
+                <div className="border border-[#d9dfd5] bg-[#fbfcfa] px-3 py-3">
+                  <div className="text-xs text-[#52635d]">当前主线</div>
+                  <div className="mt-1 text-sm font-semibold text-[#24342f]">
+                    {caseLineLabel}
+                  </div>
+                </div>
+                <div className="border border-[#d9dfd5] bg-[#fbfcfa] px-3 py-3">
+                  <div className="text-xs text-[#52635d]">证据目标</div>
+                  <div className="mt-1 text-sm font-semibold text-[#24342f]">
+                    已找到 {foundCount} / {evidenceList.length}
+                  </div>
+                </div>
+                <div className="border border-[#d9dfd5] bg-[#fbfcfa] px-3 py-3">
+                  <div className="text-xs text-[#52635d]">注意力值</div>
+                  <div className="mt-1 text-sm font-semibold text-[#24342f]">
+                    {visibleAttentionScore}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <EvidenceProgressBar
           evidenceList={evidenceList}
           foundEvidenceIds={foundEvidenceIds}
@@ -237,7 +295,11 @@ export default function CasePage() {
             onPaperClick={handlePaperClick}
           />
           <div>
-            <EvidenceDetailPanel selectedEvidence={selectedEvidence} />
+            <EvidenceDetailPanel
+              selectedEvidence={selectedEvidence}
+              paperId={detectiveCase.paper_id}
+              caseId={caseId}
+            />
 
             <div className="mt-3 border border-[#d9dfd5] bg-[#fbfcfa] px-4 py-3">
               <div className="text-xs font-semibold tracking-[0.14em] text-[#6d7a75] uppercase">
@@ -283,7 +345,7 @@ export default function CasePage() {
                 </div>
                 <p className="mt-2 leading-6">{lastClickResult.feedback}</p>
                 <div className="mt-2 text-xs font-semibold">
-                  注意力变化：{formatScoreDelta(lastClickResult.score_delta)}
+                  注意力 {formatScoreDelta(lastClickResult.score_delta)}
                 </div>
               </div>
             ) : null}

@@ -1,3 +1,4 @@
+import { CorrectionPanel } from "@/components/CorrectionPanel";
 import type { EvidenceItem } from "@/types/evidence";
 import {
   getEvidenceStrengthLabel,
@@ -6,6 +7,8 @@ import {
 
 interface EvidenceDetailPanelProps {
   selectedEvidence?: EvidenceItem | null;
+  paperId?: string;
+  caseId?: string;
 }
 
 function MetaItem({ label, value }: { label: string; value: string | number }) {
@@ -21,6 +24,8 @@ function MetaItem({ label, value }: { label: string; value: string | number }) {
 
 export function EvidenceDetailPanel({
   selectedEvidence = null,
+  paperId = "paper_001",
+  caseId,
 }: EvidenceDetailPanelProps) {
   return (
     <aside className="border border-[#cfd7cc] bg-white/80 p-5 shadow-[0_14px_40px_rgba(25,35,31,0.06)] lg:sticky lg:top-6">
@@ -77,6 +82,13 @@ export function EvidenceDetailPanel({
               {selectedEvidence.limitation}
             </p>
           </div>
+
+          <CorrectionPanel
+            paperId={paperId}
+            caseId={caseId}
+            evidenceId={selectedEvidence.id}
+            targetType="evidence"
+          />
         </div>
       ) : (
         <div>

@@ -124,7 +124,7 @@ export function matchEvidence(
       click_id: clickEvent.click_id,
       result_type: "related_info",
       feedback:
-        "这是相关信息，但不是当前案件需要收集的核心证据。建议寻找包含实验结果、对照组、显著性变化或图表数据的内容。",
+        "这是相关背景信息，但不是当前案件的核心证据。继续寻找包含实验结果、对照组、显著性变化或图表数据的内容。",
       score_delta: 0,
       highlight: false,
     };
@@ -134,7 +134,7 @@ export function matchEvidence(
     click_id: clickEvent.click_id,
     result_type: "invalid_click",
     feedback:
-      "这不是有效证据。关键证据通常出现在 Results、Figure、Figure legend 或 Discussion 中，并包含实验组、对照组、变化趋势、显著性或结论性描述。",
+      "这不是有效证据。请回到 Results、Figure、Figure legend 或 Discussion 中寻找带有实验组、变化趋势、显著性或结论性描述的内容。",
     score_delta: -1,
     highlight: false,
   };

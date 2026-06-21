@@ -29,8 +29,23 @@ type ClickableTextItem = {
 };
 
 const clickableTexts = {
+  abstractResistance: {
+    text: "Sorafenib resistance limits durable responses in hepatocellular carcinoma.",
+    page: 1,
+    sourceLabel: "Abstract",
+  },
+  abstractInvestigation: {
+    text: "This mock paper investigates whether PI3K/AKT pathway activation is associated with acquired resistance and whether AKT inhibition can restore drug sensitivity in resistant HCC models.",
+    page: 1,
+    sourceLabel: "Abstract",
+  },
   backgroundTreatment: {
     text: "Sorafenib is a standard treatment for advanced hepatocellular carcinoma.",
+    page: 2,
+    sourceLabel: "Introduction paragraph 1",
+  },
+  adaptiveSurvivalSignaling: {
+    text: "Targeted therapy for advanced HCC is frequently constrained by adaptive survival signaling.",
     page: 2,
     sourceLabel: "Introduction paragraph 1",
   },
@@ -39,10 +54,30 @@ const clickableTexts = {
     page: 2,
     sourceLabel: "Introduction paragraph 2",
   },
+  priorPathwayRewiring: {
+    text: "Prior studies have implicated RAF, MAPK, and PI3K/AKT pathway rewiring in treatment escape.",
+    page: 2,
+    sourceLabel: "Introduction paragraph 2",
+  },
   backgroundResistance: {
     text: "Drug resistance remains a major challenge in liver cancer treatment.",
     page: 3,
     sourceLabel: "Introduction paragraph 3",
+  },
+  incompleteEvidenceChain: {
+    text: "The evidence chain connecting pathway activation to functional resistance remains incomplete.",
+    page: 3,
+    sourceLabel: "Introduction paragraph 3",
+  },
+  resistantViabilityModel: {
+    text: "Resistant HCC cells retained higher viability after sorafenib exposure than parental controls, confirming the resistant phenotype used throughout the study.",
+    page: 7,
+    sourceLabel: "Results paragraph 1",
+  },
+  plateReaderMethod: {
+    text: "Assays were read on the same plate reader across batches.",
+    page: 7,
+    sourceLabel: "Results paragraph 1",
   },
   aktPhosphorylation: {
     text: "AKT phosphorylation was significantly increased in sorafenib-resistant HCC cells.",
@@ -59,8 +94,18 @@ const clickableTexts = {
     page: 9,
     sourceLabel: "Results paragraph 5",
   },
+  archivedSpecimens: {
+    text: "This association was evaluated in archived patient specimens and requires further prospective confirmation.",
+    page: 9,
+    sourceLabel: "Results paragraph 5",
+  },
   clinicalPAktAssociation: {
     text: "High tumoral p-AKT staining was associated with shorter progression-free survival in sorafenib-treated HCC patients.",
+    page: 9,
+    sourceLabel: "Results paragraph 5",
+  },
+  clinicalPattern: {
+    text: "This clinical pattern strengthened the link between pathway activity and treatment outcome.",
     page: 9,
     sourceLabel: "Results paragraph 5",
   },
@@ -79,8 +124,18 @@ const clickableTexts = {
     page: 10,
     sourceLabel: "Results paragraph 7",
   },
+  geneticPerturbationContext: {
+    text: "These genetic perturbation data complemented the pharmacological AKT inhibition experiments.",
+    page: 10,
+    sourceLabel: "Results paragraph 7",
+  },
   restoredApoptosis: {
     text: "MK-2206 restored sorafenib-induced apoptosis in resistant HCC cells, as indicated by increased cleaved caspase-3 and Annexin V positivity.",
+    page: 10,
+    sourceLabel: "Results paragraph 7",
+  },
+  apoptosisReadoutContext: {
+    text: "The apoptosis readout connected pathway inhibition to functional drug response.",
     page: 10,
     sourceLabel: "Results paragraph 7",
   },
@@ -99,8 +154,18 @@ const clickableTexts = {
     page: 13,
     sourceLabel: "Discussion paragraph 2",
   },
+  evidenceModelInterpretation: {
+    text: "The data suggest that pathway inhibition should be interpreted through expression, function, and model-level evidence rather than a single assay.",
+    page: 13,
+    sourceLabel: "Discussion paragraph 2",
+  },
   therapeuticWindow: {
     text: "The therapeutic window of AKT inhibition requires further optimization to minimize toxicity in non-malignant hepatocytes.",
+    page: 14,
+    sourceLabel: "Discussion paragraph 4",
+  },
+  translationBoundary: {
+    text: "This boundary matters when considering translation beyond resistant cell systems.",
     page: 14,
     sourceLabel: "Discussion paragraph 4",
   },
@@ -581,10 +646,8 @@ export function FakePaperViewer({
         <section>
           <h3 className="text-xl font-semibold text-[#14211d]">Abstract</h3>
           <p className="mt-3 text-base leading-8 text-[#364641]">
-            Sorafenib resistance limits durable responses in hepatocellular
-            carcinoma. This mock paper investigates whether PI3K/AKT pathway
-            activation is associated with acquired resistance and whether AKT
-            inhibition can restore drug sensitivity in resistant HCC models.
+            {renderClickableSentence(clickableTexts.abstractResistance)}{" "}
+            {renderClickableSentence(clickableTexts.abstractInvestigation)}
           </p>
         </section>
 
@@ -595,18 +658,15 @@ export function FakePaperViewer({
           <div className="mt-3 space-y-4 text-base leading-8 text-[#364641]">
             <p>
               {renderClickableSentence(clickableTexts.backgroundTreatment)}{" "}
-              Targeted therapy for advanced HCC is frequently constrained by
-              adaptive survival signaling.
+              {renderClickableSentence(clickableTexts.adaptiveSurvivalSignaling)}
             </p>
             <p>
               {renderClickableSentence(clickableTexts.backgroundPathway)}{" "}
-              Prior studies have implicated RAF, MAPK, and PI3K/AKT pathway
-              rewiring in treatment escape.
+              {renderClickableSentence(clickableTexts.priorPathwayRewiring)}
             </p>
             <p>
               {renderClickableSentence(clickableTexts.backgroundResistance)}{" "}
-              The evidence chain connecting pathway activation to functional
-              resistance remains incomplete.
+              {renderClickableSentence(clickableTexts.incompleteEvidenceChain)}
             </p>
           </div>
         </section>
@@ -615,9 +675,8 @@ export function FakePaperViewer({
           <h3 className="text-xl font-semibold text-[#14211d]">Results</h3>
           <div className="mt-3 space-y-4 text-base leading-8 text-[#364641]">
             <p>
-              Resistant HCC cells retained higher viability after sorafenib
-              exposure than parental controls, confirming the resistant
-              phenotype used throughout the study.
+              {renderClickableSentence(clickableTexts.resistantViabilityModel)}{" "}
+              {renderClickableSentence(clickableTexts.plateReaderMethod)}
             </p>
             <p>
               {renderClickableSentence(clickableTexts.aktPhosphorylation)}{" "}
@@ -625,13 +684,11 @@ export function FakePaperViewer({
             </p>
             <p>
               {renderClickableSentence(clickableTexts.survivalAssociation)}{" "}
-              This association was evaluated in archived patient specimens and
-              requires further prospective confirmation.
+              {renderClickableSentence(clickableTexts.archivedSpecimens)}
             </p>
             <p>
               {renderClickableSentence(clickableTexts.clinicalPAktAssociation)}{" "}
-              This clinical pattern strengthened the link between pathway
-              activity and treatment outcome.
+              {renderClickableSentence(clickableTexts.clinicalPattern)}
             </p>
             <p>
               {renderClickableSentence(clickableTexts.aktInhibitorViability)}{" "}
@@ -639,13 +696,11 @@ export function FakePaperViewer({
             </p>
             <p>
               {renderClickableSentence(clickableTexts.aktKnockdownSensitivity)}{" "}
-              These genetic perturbation data complemented the pharmacological
-              AKT inhibition experiments.
+              {renderClickableSentence(clickableTexts.geneticPerturbationContext)}
             </p>
             <p>
               {renderClickableSentence(clickableTexts.restoredApoptosis)}{" "}
-              The apoptosis readout connected pathway inhibition to functional
-              drug response.
+              {renderClickableSentence(clickableTexts.apoptosisReadoutContext)}
             </p>
             <p>
               {renderClickableSentence(clickableTexts.combinationTumorGrowth)}{" "}
@@ -665,15 +720,12 @@ export function FakePaperViewer({
         <section>
           <h3 className="text-xl font-semibold text-[#14211d]">Discussion</h3>
           <p className="mt-3 text-base leading-8 text-[#364641]">
-            {renderClickableSentence(clickableTexts.verticalTargeting)} The
-            data suggest that pathway inhibition should be interpreted through
-            expression, function, and model-level evidence rather than a single
-            assay.
+            {renderClickableSentence(clickableTexts.verticalTargeting)}{" "}
+            {renderClickableSentence(clickableTexts.evidenceModelInterpretation)}
           </p>
           <p className="mt-3 text-base leading-8 text-[#364641]">
-            {renderClickableSentence(clickableTexts.therapeuticWindow)} This
-            boundary matters when considering translation beyond resistant cell
-            systems.
+            {renderClickableSentence(clickableTexts.therapeuticWindow)}{" "}
+            {renderClickableSentence(clickableTexts.translationBoundary)}
           </p>
         </section>
 
