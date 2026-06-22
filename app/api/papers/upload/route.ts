@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import type { ApiErrorResponse, UploadPaperResponse } from "@/types/api";
+import { runPaperAnalysis } from "@/lib/ai/runPaperAnalysis";
+import { extractPdfTextFromArrayBuffer } from "@/lib/pdf/extractPdfText";
+import { setCachedPaperAnalysis } from "@/lib/server/analysisCache";
+
+export const runtime = "nodejs";
 
 function isPdfFile(file: File): boolean {
   return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
@@ -7,6 +12,9 @@ function isPdfFile(file: File): boolean {
 
 export async function POST(request: Request) {
   let formData: FormData;
+  const paperId = "paper_001";
+  const jobId = "job_paper_001";
+  const startedAt = new Date().toISOString();
 
   try {
     formData = await request.formData();
@@ -33,12 +41,78 @@ export async function POST(request: Request) {
     );
   }
 
+  let extractedText: string | undefined;
+  let extractionStats = {
+    page_count: 0,
+    extracted_page_count: 0,
+    char_count: 0,
+    was_page_limited: false,
+  };
+  const warnings: string[] = [];
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const extractionResult = await extractPdfTextFromArrayBuffer({
+      arrayBuffer,
+    });
+
+    extractedText = extractionResult.text;
+    extractionStats = extractionResult.stats;
+
+    if (extractionResult.stats.char_count === 0) {
+      warnings.push(
+        "该 PDF 可能是扫描版或缺少文本层，当前返回 mock 分析结果。",
+      );
+      extractedText = undefined;
+    }
+  } catch (error) {
+    const extractionError =
+      error instanceof Error ? error.message : "未知错误";
+
+    console.warn("PDF text extraction failed:", extractionError);
+    warnings.push("PDF 文本抽取失败，当前返回 mock 分析结果。");
+  }
+
+  let analysisOutput = await runPaperAnalysis({
+    paperId,
+    fileName: file.name,
+    extractedText,
+  });
+  const combinedWarnings = [
+    ...warnings,
+    ...(analysisOutput.metadata.warnings ?? []),
+  ];
+
+  analysisOutput = {
+    ...analysisOutput,
+    metadata: {
+      ...analysisOutput.metadata,
+      warnings: combinedWarnings.length > 0 ? combinedWarnings : undefined,
+    },
+  };
+
+  setCachedPaperAnalysis({
+    paperId,
+    jobId,
+    fileName: file.name,
+    extractedTextStats: extractionStats,
+    analysisOutput,
+    createdAt: Date.now(),
+  });
+
   return NextResponse.json<UploadPaperResponse>({
-    paper_id: "paper_001",
-    job_id: "job_paper_001",
+    paper_id: paperId,
+    job_id: jobId,
     status: "queued",
-    started_at: new Date().toISOString(),
+    started_at: startedAt,
     message: "论文已上传，AI 分析流程已启动",
-    next_url: "/papers/paper_001/processing",
+    next_url: `/papers/${paperId}/processing`,
+    extraction: {
+      ...extractionStats,
+      has_text: extractionStats.char_count > 0,
+    },
+    analysis_mode: analysisOutput.metadata.mode,
+    analysis_provider: analysisOutput.metadata.provider,
+    warnings: analysisOutput.metadata.warnings ?? [],
   });
 }

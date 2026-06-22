@@ -3,6 +3,8 @@ import type { ApiErrorResponse } from "@/types/api";
 import type { PipelineResponse } from "@/types/pipeline";
 import { getMockPipelineStatus } from "@/utils/mockAiPipeline";
 
+export const runtime = "nodejs";
+
 type PipelineRouteContext = {
   params: Promise<{
     paperId: string;

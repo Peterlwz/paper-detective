@@ -14,6 +14,10 @@ export interface UploadPaperResponse {
   started_at: string;
   message: string;
   next_url: string;
+  extraction: UploadPaperExtraction;
+  analysis_mode: PaperAnalysisMetadata["mode"];
+  analysis_provider: AiProvider;
+  warnings: string[];
 }
 
 export interface PaperAnalysisMetadata {
@@ -30,4 +34,16 @@ export interface PaperAnalysisResponse {
   cases: DetectiveCase[];
   evidence_items: EvidenceItem[];
   analysis?: PaperAnalysisMetadata;
+  extraction?: PaperExtractionStats;
+}
+
+export interface PaperExtractionStats {
+  page_count: number;
+  extracted_page_count: number;
+  char_count: number;
+  was_page_limited: boolean;
+}
+
+export interface UploadPaperExtraction extends PaperExtractionStats {
+  has_text: boolean;
 }

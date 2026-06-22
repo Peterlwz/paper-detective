@@ -46,6 +46,7 @@ export function parsePaperAnalysisResult(raw: unknown): PaperAnalysisOutput {
     metadata.provider !== "mock" &&
     metadata.provider !== "openai" &&
     metadata.provider !== "qwen" &&
+    metadata.provider !== "deepseek" &&
     metadata.provider !== "custom"
   ) {
     throw new Error("AI 分析结果格式错误：metadata.provider 不受支持。");

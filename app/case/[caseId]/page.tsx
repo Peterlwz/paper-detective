@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { AiCaseDetail } from "@/components/AiCaseDetail";
 import { CaseHeader } from "@/components/CaseHeader";
 import { EvidenceDetailPanel } from "@/components/EvidenceDetailPanel";
 import { EvidenceProgressBar } from "@/components/EvidenceProgressBar";
@@ -12,6 +13,7 @@ import { mockCases } from "@/mock/cases";
 import { mockEvidenceItems } from "@/mock/evidence";
 import { mockPaper } from "@/mock/paper";
 import type { ClickEvent, ClickResult } from "@/types/click";
+import type { PaperAnalysisResponse } from "@/types/api";
 import type { HintLevel } from "@/types/hint";
 import { matchEvidence } from "@/utils/matchEvidence";
 
@@ -39,9 +41,141 @@ function formatScoreDelta(scoreDelta: number): string {
   return String(scoreDelta);
 }
 
+function AiCaseDetailLoader({
+  caseId,
+  paperId,
+}: {
+  caseId: string;
+  paperId: string;
+}) {
+  const [analysis, setAnalysis] = useState<PaperAnalysisResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadCaseDetail() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(
+          `/api/papers/${encodeURIComponent(paperId)}/analysis`,
+          {
+            signal: controller.signal,
+          },
+        );
+
+        if (!response.ok) {
+          setAnalysis(null);
+          setError("未能读取案件详情，请返回案件列表。");
+          return;
+        }
+
+        const payload = (await response.json()) as PaperAnalysisResponse;
+        setAnalysis(payload);
+      } catch (requestError) {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") {
+          return;
+        }
+
+        setAnalysis(null);
+        setError("未能读取案件详情，请返回案件列表。");
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadCaseDetail();
+
+    return () => {
+      controller.abort();
+    };
+  }, [caseId, paperId]);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-[#f6f7f4] text-[#15201d]">
+        <section className="mx-auto grid min-h-screen w-full max-w-6xl place-items-center px-6 py-8 sm:px-10 lg:px-12">
+          <div className="border border-[#cfd7cc] bg-white/80 p-8 text-center shadow-[0_14px_40px_rgba(25,35,31,0.06)]">
+            <p className="text-sm font-medium tracking-[0.18em] text-[#52635d] uppercase">
+              Loading Case
+            </p>
+            <h1 className="mt-4 text-3xl font-semibold text-[#14211d]">
+              正在读取案件详情...
+            </h1>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const detectiveCase =
+    analysis?.cases.find((item) => item.case_id === caseId) ?? null;
+  const evidenceList = analysis?.evidence_items.filter(
+    (item) => item.case_id === caseId,
+  ) ?? [];
+
+  if (error || !analysis || !detectiveCase) {
+    return (
+      <main className="min-h-screen bg-[#f6f7f4] text-[#15201d]">
+        <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-12">
+          <header className="flex items-center justify-between border-b border-[#d8ded4] pb-5">
+            <Link
+              href="/"
+              className="text-sm font-semibold tracking-[0.22em] text-[#52635d] uppercase transition hover:text-[#1d352f]"
+            >
+              Paper Detective
+            </Link>
+            <Link
+              href={`/cases?paperId=${encodeURIComponent(paperId)}`}
+              className="border border-[#c7cec4] px-3 py-1 text-xs font-semibold text-[#52635d] transition hover:border-[#1d352f] hover:text-[#1d352f]"
+            >
+              返回案件列表
+            </Link>
+          </header>
+
+          <div className="grid flex-1 place-items-center py-16">
+            <div className="w-full max-w-xl border border-[#cfd7cc] bg-white/80 p-8 text-center shadow-[0_14px_40px_rgba(25,35,31,0.06)]">
+              <p className="text-sm font-medium tracking-[0.18em] text-[#52635d] uppercase">
+                Case Missing
+              </p>
+              <h1 className="mt-4 text-3xl font-semibold text-[#14211d]">
+                未找到该案件
+              </h1>
+              <p className="mt-4 text-sm leading-7 text-[#52635d]">
+                {error || "请返回案件列表，选择一个可用案件继续。"}
+              </p>
+              <Link
+                href={`/cases?paperId=${encodeURIComponent(paperId)}`}
+                className="mt-6 inline-flex items-center justify-center border border-[#1d352f] bg-[#1d352f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#27483f]"
+              >
+                返回案件列表
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <AiCaseDetail
+      paperId={paperId}
+      detectiveCase={detectiveCase}
+      evidenceList={evidenceList}
+    />
+  );
+}
+
 export default function CasePage() {
   const params = useParams<{ caseId: string }>();
+  const searchParams = useSearchParams();
   const caseId = params.caseId;
+  const paperId = searchParams.get("paperId") ?? "paper_001";
   const foundEvidenceIdsRef = useRef<string[]>([]);
   const [foundEvidenceIds, setFoundEvidenceIds] = useState<string[]>([]);
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(
@@ -153,46 +287,7 @@ export default function CasePage() {
   }
 
   if (!detectiveCase) {
-    return (
-      <main className="min-h-screen bg-[#f6f7f4] text-[#15201d]">
-        <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-12">
-          <header className="flex items-center justify-between border-b border-[#d8ded4] pb-5">
-            <Link
-              href="/"
-              className="text-sm font-semibold tracking-[0.22em] text-[#52635d] uppercase transition hover:text-[#1d352f]"
-            >
-              Paper Detective
-            </Link>
-            <Link
-              href="/cases"
-              className="border border-[#c7cec4] px-3 py-1 text-xs font-semibold text-[#52635d] transition hover:border-[#1d352f] hover:text-[#1d352f]"
-            >
-              返回案件列表
-            </Link>
-          </header>
-
-          <div className="grid flex-1 place-items-center py-16">
-            <div className="w-full max-w-xl border border-[#cfd7cc] bg-white/80 p-8 text-center shadow-[0_14px_40px_rgba(25,35,31,0.06)]">
-              <p className="text-sm font-medium tracking-[0.18em] text-[#52635d] uppercase">
-                Case Missing
-              </p>
-              <h1 className="mt-4 text-3xl font-semibold text-[#14211d]">
-                未找到该案件
-              </h1>
-              <p className="mt-4 text-sm leading-7 text-[#52635d]">
-                请返回案件列表，选择一个可用的 Demo 案件继续侦破。
-              </p>
-              <Link
-                href="/cases"
-                className="mt-6 inline-flex items-center justify-center border border-[#1d352f] bg-[#1d352f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#27483f]"
-              >
-                返回案件列表
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
+    return <AiCaseDetailLoader caseId={caseId} paperId={paperId} />;
   }
 
   const foundCount = foundEvidenceIds.length;

@@ -6,6 +6,8 @@ import type {
 } from "@/types/correction";
 import type { ApiErrorResponse } from "@/types/api";
 
+export const runtime = "nodejs";
+
 const correctionTypes: CorrectionType[] = [
   "irrelevant_evidence",
   "wrong_explanation",

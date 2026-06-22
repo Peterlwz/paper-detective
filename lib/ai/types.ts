@@ -2,9 +2,9 @@ import type { DetectiveCase } from "@/types/case";
 import type { EvidenceItem } from "@/types/evidence";
 import type { Paper } from "@/types/paper";
 
-export type AiProvider = "mock" | "openai" | "qwen" | "custom";
+export type AiProvider = "mock" | "openai" | "qwen" | "deepseek" | "custom";
 
-export type AiMode = "mock" | "disabled" | "real";
+export type AiMode = "mock" | "real";
 
 export interface PaperAnalysisInput {
   paperId: string;

@@ -72,6 +72,10 @@ export function CasesClient({ paperId }: CasesClientProps) {
       {},
     );
   }, [analysis]);
+  const analysisModeMessage =
+    analysis?.analysis?.mode === "real"
+      ? "当前案件主线由 DeepSeek 分析生成。"
+      : "当前使用 Demo / mock AI 分析结果。";
 
   if (isLoading) {
     return (
@@ -157,6 +161,14 @@ export function CasesClient({ paperId }: CasesClientProps) {
               </div>
             </div>
           </div>
+          <div className="mt-6 flex flex-col gap-2 border-l-4 border-[#1d352f] bg-[#edf2ef] px-4 py-3 text-sm leading-6 text-[#364641] sm:flex-row sm:items-center sm:justify-between">
+            <span>{analysisModeMessage}</span>
+            {analysis.extraction ? (
+              <span className="font-semibold">
+                已抽取文本约 {analysis.extraction.char_count} 字符
+              </span>
+            ) : null}
+          </div>
         </section>
 
         <section className="py-10">
@@ -166,7 +178,7 @@ export function CasesClient({ paperId }: CasesClientProps) {
                 Case Lines
               </p>
               <h2 className="text-3xl font-semibold text-[#14211d]">
-                Demo 拆出 {analysis.cases.length} 条案件主线
+                已拆出 {analysis.cases.length} 条案件主线
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[#52635d]">
                 同一篇论文可以拆成多条科学案件主线。每条主线对应不同
@@ -207,7 +219,7 @@ export function CasesClient({ paperId }: CasesClientProps) {
                     </div>
 
                     <Link
-                      href={`/case/${detectiveCase.case_id}`}
+                      href={`/case/${detectiveCase.case_id}?paperId=${encodeURIComponent(paperId)}`}
                       className="inline-flex shrink-0 items-center justify-center border border-[#1d352f] bg-[#1d352f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#27483f]"
                     >
                       开始侦破

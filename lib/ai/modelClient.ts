@@ -1,10 +1,16 @@
-import type { AiMode } from "@/lib/ai/types";
+import type { AiMode, AiProvider } from "@/lib/ai/types";
 
 export function getAiMode(): AiMode {
   const mode = process.env.PAPER_DETECTIVE_AI_MODE;
 
-  if (mode === "disabled" || mode === "real") {
-    return mode;
+  return mode === "real" ? "real" : "mock";
+}
+
+export function getAiProvider(): AiProvider {
+  const provider = process.env.PAPER_DETECTIVE_AI_PROVIDER;
+
+  if (provider === "deepseek") {
+    return "deepseek";
   }
 
   return "mock";
