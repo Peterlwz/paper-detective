@@ -8,6 +8,10 @@ import { findFigureEvidenceHits } from "@/utils/pdfBbox";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
+if (process.env.NODE_ENV === "development") {
+  console.info("PDF.js API version:", pdfjs.version);
+}
+
 interface PdfViewerProps {
   fileUrl: string;
   fileName?: string;
