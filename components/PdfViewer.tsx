@@ -1,15 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import type { EvidenceItem } from "@/types/evidence";
 import type { PdfPageClick, PdfTextClick } from "@/types/pdf";
 import { findFigureEvidenceHits } from "@/utils/pdfBbox";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface PdfViewerProps {
   fileUrl: string;
@@ -33,6 +30,10 @@ function formatRatio(value: number): string {
 
 function normalizeText(value: string): string {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function getPdfLoadErrorMessage(error: Error): string {
+  return error.message || "未知 PDF 加载错误";
 }
 
 function getClickedTextElement(target: HTMLElement): HTMLElement | null {
@@ -78,6 +79,15 @@ export function PdfViewer({
       evidence.page === pageNumber &&
       evidence.bbox,
   );
+
+  useEffect(() => {
+    setNumPages(null);
+    setPageNumber(1);
+    setLoadError("");
+    setLastClickPoint(null);
+    setLastTextClick(null);
+    setLastFigureHitResult(null);
+  }, [fileUrl]);
 
   function handlePageClick(event: React.MouseEvent<HTMLDivElement>) {
     const pageRect = event.currentTarget.getBoundingClientRect();
@@ -199,79 +209,96 @@ export function PdfViewer({
       </div>
 
       {loadError ? (
-        <div className="mt-4 border-l-4 border-[#9a4b2e] bg-[#f4ede8] px-4 py-3 text-sm font-semibold text-[#4d3329]">
-          {loadError}
-        </div>
-      ) : null}
-
-      <div className="mt-5 overflow-auto border border-[#d9dfd5] bg-[#edf2ef] p-4">
-        <Document
-          file={fileUrl}
-          loading={
-            <div className="px-4 py-10 text-center text-sm text-[#52635d]">
-              正在加载 PDF...
+        <div className="mt-4 space-y-4">
+          <div className="border-l-4 border-[#9a4b2e] bg-[#f4ede8] px-4 py-3 text-sm text-[#4d3329]">
+            <div className="font-semibold">PDF 加载失败</div>
+            <div className="mt-2 break-words">
+              错误信息：{loadError}
             </div>
-          }
-          error={
-            <div className="px-4 py-10 text-center text-sm text-[#4d3329]">
-              PDF 加载失败，请重新选择文件。
-            </div>
-          }
-          onLoadSuccess={({ numPages: loadedPages }) => {
-            setNumPages(loadedPages);
-            setPageNumber(1);
-            setLoadError("");
-          }}
-          onLoadError={() => {
-            setNumPages(null);
-            setLoadError("PDF 加载失败，请重新选择文件。");
-          }}
-        >
-          <div
-            onClick={handlePageClick}
-            className="relative inline-block cursor-crosshair bg-white shadow-[0_12px_32px_rgba(25,35,31,0.18)]"
-          >
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              renderAnnotationLayer={false}
-              renderTextLayer={true}
-              loading={
-                <div className="px-4 py-10 text-center text-sm text-[#52635d]">
-                  正在渲染页面...
-                </div>
-              }
-            />
-            {showBboxOverlay
-              ? currentPageFigureEvidence.map((evidence) => {
-                  const bbox = evidence.bbox;
-
-                  if (!bbox) {
-                    return null;
-                  }
-
-                  return (
-                    <div
-                      key={evidence.id}
-                      className="pointer-events-none absolute z-20 border-2 border-[#c96b2c] bg-[#f2b05e]/20"
-                      style={{
-                        left: `${bbox.x * 100}%`,
-                        top: `${bbox.y * 100}%`,
-                        width: `${bbox.width * 100}%`,
-                        height: `${bbox.height * 100}%`,
-                      }}
-                    >
-                      <div className="absolute left-1 top-1 max-w-[calc(100%-0.5rem)] bg-[#c96b2c] px-1.5 py-1 text-[10px] font-semibold leading-tight text-white shadow-sm">
-                        <span>{evidence.id}</span>
-                        <span className="ml-1">{evidence.source_label}</span>
-                      </div>
-                    </div>
-                  );
-                })
-              : null}
+            <p className="mt-3 leading-6">
+              PDF.js 渲染失败，但你仍可使用浏览器内置预览查看 PDF。
+              浏览器预览模式不支持文本点击和 bbox 调试。
+            </p>
           </div>
-        </Document>
-      </div>
+          <iframe
+            src={fileUrl}
+            title={fileName ?? "PDF fallback preview"}
+            className="h-[600px] w-full border border-[#d9dfd5] bg-white"
+          />
+        </div>
+      ) : (
+        <div className="mt-5 overflow-auto border border-[#d9dfd5] bg-[#edf2ef] p-4">
+          <Document
+            file={fileUrl}
+            loading={
+              <div className="px-4 py-10 text-center text-sm text-[#52635d]">
+                正在加载 PDF...
+              </div>
+            }
+            error={
+              <div className="px-4 py-10 text-center text-sm text-[#4d3329]">
+                PDF 加载失败，请重新选择文件。
+              </div>
+            }
+            onLoadSuccess={({ numPages: loadedPages }) => {
+              setNumPages(loadedPages);
+              setPageNumber(1);
+              setLoadError("");
+            }}
+            onLoadError={(error) => {
+              const message = getPdfLoadErrorMessage(error);
+
+              console.error("PDF load error:", error);
+              setNumPages(null);
+              setLoadError(message);
+            }}
+          >
+            <div
+              onClick={handlePageClick}
+              className="relative inline-block cursor-crosshair bg-white shadow-[0_12px_32px_rgba(25,35,31,0.18)]"
+            >
+              <Page
+                pageNumber={pageNumber}
+                scale={scale}
+                renderAnnotationLayer={false}
+                renderTextLayer={true}
+                loading={
+                  <div className="px-4 py-10 text-center text-sm text-[#52635d]">
+                    正在渲染页面...
+                  </div>
+                }
+              />
+              {showBboxOverlay
+                ? currentPageFigureEvidence.map((evidence) => {
+                    const bbox = evidence.bbox;
+
+                    if (!bbox) {
+                      return null;
+                    }
+
+                    return (
+                      <div
+                        key={evidence.id}
+                        className="pointer-events-none absolute z-20 border-2 border-[#c96b2c] bg-[#f2b05e]/20"
+                        style={{
+                          left: `${bbox.x * 100}%`,
+                          top: `${bbox.y * 100}%`,
+                          width: `${bbox.width * 100}%`,
+                          height: `${bbox.height * 100}%`,
+                        }}
+                      >
+                        <div className="absolute left-1 top-1 max-w-[calc(100%-0.5rem)] bg-[#c96b2c] px-1.5 py-1 text-[10px] font-semibold leading-tight text-white shadow-sm">
+                          <span>{evidence.id}</span>
+                          <span className="ml-1">{evidence.source_label}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                : null}
+            </div>
+          </Document>
+        </div>
+      )}
 
       {showBboxOverlay ? (
         <div className="mt-3 border border-[#d9dfd5] bg-[#fffaf2] px-4 py-3 text-xs leading-6 text-[#6f4d28]">
