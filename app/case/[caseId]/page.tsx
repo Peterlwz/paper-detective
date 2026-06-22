@@ -167,6 +167,7 @@ function AiCaseDetailLoader({
       paperId={paperId}
       detectiveCase={detectiveCase}
       evidenceList={evidenceList}
+      readableContent={analysis.reader}
     />
   );
 }

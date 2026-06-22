@@ -64,6 +64,7 @@ export async function GET(request: Request, { params }: AnalysisRouteContext) {
             : "当前结果由 mock AI pipeline 生成，用于演示完整产品流程。",
       },
       extraction: cachedAnalysis.extractedTextStats,
+      reader: cachedAnalysis.readableContent,
     });
   }
 

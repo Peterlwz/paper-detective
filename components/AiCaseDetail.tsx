@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { CorrectionPanel } from "@/components/CorrectionPanel";
+import { RealPaperViewer } from "@/components/RealPaperViewer";
 import type { DetectiveCase } from "@/types/case";
 import type { EvidenceItem } from "@/types/evidence";
+import type { ReadablePaperContent } from "@/types/reader";
 import {
   getEvidenceStrengthLabel,
   getEvidenceTypeLabel,
@@ -11,6 +13,7 @@ interface AiCaseDetailProps {
   paperId: string;
   detectiveCase: DetectiveCase;
   evidenceList: EvidenceItem[];
+  readableContent?: ReadablePaperContent | null;
 }
 
 const difficultyLabels: Record<DetectiveCase["difficulty"], string> = {
@@ -63,6 +66,7 @@ export function AiCaseDetail({
   paperId,
   detectiveCase,
   evidenceList,
+  readableContent,
 }: AiCaseDetailProps) {
   return (
     <main className="min-h-screen bg-[#f6f7f4] text-[#15201d]">
@@ -249,6 +253,28 @@ export function AiCaseDetail({
               </div>
             )}
           </div>
+        </section>
+
+        <section className="border-t border-[#d8ded4] py-8">
+          {readableContent ? (
+            <RealPaperViewer
+              paperId={paperId}
+              readableContent={readableContent}
+              evidenceList={evidenceList}
+            />
+          ) : (
+            <div className="border border-[#cfd7cc] bg-white/80 p-6 shadow-[0_14px_40px_rgba(25,35,31,0.06)]">
+              <p className="text-sm font-medium tracking-[0.18em] text-[#52635d] uppercase">
+                Real Paper Reader
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-[#14211d]">
+                网页化阅读器 Beta
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-[#52635d]">
+                当前没有可用的网页化论文文本。请重新上传带文本层的 PDF。
+              </p>
+            </div>
+          )}
         </section>
 
         <section className="border border-[#cfd7cc] bg-white/80 p-6">

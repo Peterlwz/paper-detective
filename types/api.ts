@@ -2,6 +2,7 @@ import type { AiProvider } from "@/lib/ai/types";
 import type { DetectiveCase } from "@/types/case";
 import type { EvidenceItem } from "@/types/evidence";
 import type { Paper } from "@/types/paper";
+import type { ReadablePaperContent } from "@/types/reader";
 
 export interface ApiErrorResponse {
   error: string;
@@ -15,6 +16,7 @@ export interface UploadPaperResponse {
   message: string;
   next_url: string;
   extraction: UploadPaperExtraction;
+  reader: ReadablePaperContent["stats"];
   analysis_mode: PaperAnalysisMetadata["mode"];
   analysis_provider: AiProvider;
   warnings: string[];
@@ -35,6 +37,7 @@ export interface PaperAnalysisResponse {
   evidence_items: EvidenceItem[];
   analysis?: PaperAnalysisMetadata;
   extraction?: PaperExtractionStats;
+  reader?: ReadablePaperContent;
 }
 
 export interface PaperExtractionStats {

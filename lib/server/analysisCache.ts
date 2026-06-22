@@ -1,13 +1,16 @@
 import type { PaperAnalysisOutput } from "@/lib/ai/types";
 import type { ExtractedPdfTextStats } from "@/lib/pdf/extractPdfText";
+import type { ReadablePaperContent } from "@/types/reader";
 
-// MVP-only in-memory cache. It does not store PDF files and is not durable
-// across Vercel serverless instances, deployments, or cold starts.
+// MVP-only in-memory cache. It stores derived analysis and sectioned reader
+// content, not PDF files or the full extracted PDF text. It is not durable across
+// Vercel serverless instances, deployments, or cold starts.
 export type CachedPaperAnalysis = {
   paperId: string;
   jobId: string;
   fileName?: string;
   extractedTextStats?: ExtractedPdfTextStats;
+  readableContent?: ReadablePaperContent;
   analysisOutput?: PaperAnalysisOutput;
   createdAt: number;
 };

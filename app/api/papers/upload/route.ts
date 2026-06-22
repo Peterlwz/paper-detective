@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { ApiErrorResponse, UploadPaperResponse } from "@/types/api";
 import { runPaperAnalysis } from "@/lib/ai/runPaperAnalysis";
 import { extractPdfTextFromArrayBuffer } from "@/lib/pdf/extractPdfText";
+import { buildReadablePaperContent } from "@/lib/reader/buildReadablePaperContent";
 import { setCachedPaperAnalysis } from "@/lib/server/analysisCache";
 
 export const runtime = "nodejs";
@@ -48,6 +49,11 @@ export async function POST(request: Request) {
     char_count: 0,
     was_page_limited: false,
   };
+  let readableContent = buildReadablePaperContent({
+    paperId,
+    title: file.name,
+    pages: [],
+  });
   const warnings: string[] = [];
 
   try {
@@ -58,6 +64,11 @@ export async function POST(request: Request) {
 
     extractedText = extractionResult.text;
     extractionStats = extractionResult.stats;
+    readableContent = buildReadablePaperContent({
+      paperId,
+      title: file.name,
+      pages: extractionResult.pages,
+    });
 
     if (extractionResult.stats.char_count === 0) {
       warnings.push(
@@ -96,6 +107,7 @@ export async function POST(request: Request) {
     jobId,
     fileName: file.name,
     extractedTextStats: extractionStats,
+    readableContent,
     analysisOutput,
     createdAt: Date.now(),
   });
@@ -111,6 +123,7 @@ export async function POST(request: Request) {
       ...extractionStats,
       has_text: extractionStats.char_count > 0,
     },
+    reader: readableContent.stats,
     analysis_mode: analysisOutput.metadata.mode,
     analysis_provider: analysisOutput.metadata.provider,
     warnings: analysisOutput.metadata.warnings ?? [],
