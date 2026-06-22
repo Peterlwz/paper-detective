@@ -12,6 +12,15 @@ interface RealPaperViewerProps {
   paperId: string;
   readableContent: ReadablePaperContent;
   evidenceList?: EvidenceItem[];
+  foundEvidenceIds?: string[];
+  selectedEvidenceId?: string | null;
+  onSentenceClick?: (input: {
+    sentenceId: string;
+    sectionId: string;
+    sectionTitle: string;
+    page?: number;
+    text: string;
+  }) => void;
 }
 
 type SentenceClickDebug = {
@@ -68,10 +77,37 @@ function findCandidateEvidence(
   });
 }
 
+function getSentenceEvidence(
+  sentenceText: string,
+  evidenceList: EvidenceItem[],
+): EvidenceItem[] {
+  const normalizedSentenceText = normalizeMatchText(sentenceText);
+
+  if (!normalizedSentenceText) {
+    return [];
+  }
+
+  return evidenceList.filter((evidence) => {
+    if (evidence.source_type !== "text" || !evidence.text_anchor) {
+      return false;
+    }
+
+    const normalizedAnchor = normalizeMatchText(evidence.text_anchor);
+
+    return (
+      normalizedSentenceText.includes(normalizedAnchor) ||
+      normalizedAnchor.includes(normalizedSentenceText)
+    );
+  });
+}
+
 export function RealPaperViewer({
   paperId,
   readableContent,
   evidenceList = [],
+  foundEvidenceIds = [],
+  selectedEvidenceId,
+  onSentenceClick,
 }: RealPaperViewerProps) {
   const [lastClickDebug, setLastClickDebug] =
     useState<SentenceClickDebug | null>(null);
@@ -85,12 +121,24 @@ export function RealPaperViewer({
       ),
     [readableContent.sections],
   );
+  const foundEvidenceIdSet = useMemo(
+    () => new Set(foundEvidenceIds),
+    [foundEvidenceIds],
+  );
 
   function handleSentenceClick(
     section: ReadableSection,
     sentence: ReadableSentence,
   ) {
     const candidates = findCandidateEvidence(sentence.text, evidenceList);
+
+    onSentenceClick?.({
+      sentenceId: sentence.id,
+      sectionId: section.id,
+      sectionTitle: section.title,
+      page: sentence.page,
+      text: sentence.text,
+    });
 
     setLastClickDebug({
       sectionTitle: section.title,
@@ -109,7 +157,7 @@ export function RealPaperViewer({
           网页化论文阅读器 Beta
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[#52635d]">
-          这是从 PDF 文本层抽取并重排的阅读版本。当前用于真实论文的可点击阅读测试，尚未接入完整证据捕获。
+          这是从 PDF 文本层抽取并重排的阅读版本。当前用于真实论文 AI case 的句子点击证据收集。
         </p>
       </div>
 
@@ -149,7 +197,7 @@ export function RealPaperViewer({
       </div>
 
       <div className="mt-4 border-l-4 border-[#c6b16b] bg-[#fbf6df] px-4 py-3 text-sm leading-7 text-[#4c4224]">
-        当前仅为匹配调试，不会加入证据栏。Paper ID: {paperId}
+        点击句子会交给 AI case 页面管理证据收集；此处仅保留阅读器本地点击调试。Paper ID: {paperId}
       </div>
 
       {lastClickDebug ? (
@@ -221,16 +269,44 @@ export function RealPaperViewer({
               </div>
 
               <div className="mt-4 space-y-2 text-base leading-8 text-[#364641]">
-                {section.sentences.map((sentence) => (
-                  <button
-                    key={sentence.id}
-                    type="button"
-                    onClick={() => handleSentenceClick(section, sentence)}
-                    className="block w-full cursor-pointer rounded-sm px-2 py-1 text-left transition hover:bg-[#e7eee9] hover:text-[#14211d] focus:outline-none focus:ring-2 focus:ring-[#8ea39a]"
-                  >
-                    {sentence.text}
-                  </button>
-                ))}
+                {section.sentences.map((sentence) => {
+                  const sentenceEvidence = getSentenceEvidence(
+                    sentence.text,
+                    evidenceList,
+                  );
+                  const foundEvidenceForSentence = sentenceEvidence.filter(
+                    (evidence) => foundEvidenceIdSet.has(evidence.id),
+                  );
+                  const isFound = foundEvidenceForSentence.length > 0;
+                  const isSelected = sentenceEvidence.some(
+                    (evidence) => evidence.id === selectedEvidenceId,
+                  );
+
+                  return (
+                    <button
+                      key={sentence.id}
+                      type="button"
+                      data-sentence-id={sentence.id}
+                      data-section-id={section.id}
+                      data-page={sentence.page ?? ""}
+                      onClick={() => handleSentenceClick(section, sentence)}
+                      className={`block w-full cursor-pointer rounded-sm border px-2 py-2 text-left transition focus:outline-none focus:ring-2 focus:ring-[#8ea39a] ${
+                        isSelected
+                          ? "border-[#1d352f] bg-[#edf2ef] text-[#14211d]"
+                          : isFound
+                            ? "border-[#8aa79a] bg-[#eef6f0] text-[#24342f]"
+                            : "border-transparent hover:bg-[#e7eee9] hover:text-[#14211d]"
+                      }`}
+                    >
+                      <span>{sentence.text}</span>
+                      {isFound ? (
+                        <span className="ml-2 inline-flex border border-[#8aa79a] bg-white/80 px-2 py-0.5 text-xs font-semibold text-[#1d352f]">
+                          已发现 {foundEvidenceForSentence.map((evidence) => evidence.id).join(", ")}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             </article>
           ))}

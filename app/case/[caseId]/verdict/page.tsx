@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { AiVerdictReport } from "@/components/AiVerdictReport";
+import { AiVerdictLoader } from "@/components/AiVerdictLoader";
 import { VerdictReport } from "@/components/VerdictReport";
 import { mockCases } from "@/mock/cases";
 import { mockEvidenceItems } from "@/mock/evidence";
-import { getCachedPaperAnalysis } from "@/lib/server/analysisCache";
 
 type VerdictPageProps = {
   params: Promise<{
@@ -66,48 +65,7 @@ export default async function VerdictPage({
   );
 
   if (!detectiveCase) {
-    const cachedAnalysis = getCachedPaperAnalysis(paperId);
-    const aiAnalysisOutput = cachedAnalysis?.analysisOutput;
-    const aiDetectiveCase =
-      aiAnalysisOutput?.cases.find((item) => item.case_id === caseId) ?? null;
-    const aiEvidenceList =
-      aiAnalysisOutput?.evidence_items.filter(
-        (item) => item.case_id === caseId,
-      ) ?? [];
-
-    if (aiDetectiveCase && aiAnalysisOutput) {
-      return (
-        <AiVerdictReport
-          paperId={paperId}
-          detectiveCase={aiDetectiveCase}
-          evidenceList={aiEvidenceList}
-          analysisMode={aiAnalysisOutput.metadata.mode}
-          analysisProvider={aiAnalysisOutput.metadata.provider}
-        />
-      );
-    }
-
-    return (
-      <VerdictShell caseId={caseId} paperId={paperId}>
-        <div className="border border-[#cfd7cc] bg-white/80 p-8 text-center shadow-[0_14px_40px_rgba(25,35,31,0.06)]">
-          <p className="text-sm font-medium tracking-[0.18em] text-[#52635d] uppercase">
-            Case Missing
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold text-[#14211d]">
-            未找到该案件
-          </h1>
-          <p className="mt-4 text-sm leading-7 text-[#52635d]">
-            未能从当前论文分析缓存中读取该 AI 案件，请返回案件列表确认。
-          </p>
-          <Link
-            href={`/cases?paperId=${encodeURIComponent(paperId)}`}
-            className="mt-6 inline-flex items-center justify-center border border-[#1d352f] bg-[#1d352f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#27483f]"
-          >
-            返回案件列表
-          </Link>
-        </div>
-      </VerdictShell>
-    );
+    return <AiVerdictLoader caseId={caseId} paperId={paperId} />;
   }
 
   if (evidenceList.length === 0) {
