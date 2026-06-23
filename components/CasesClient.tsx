@@ -72,10 +72,13 @@ export function CasesClient({ paperId }: CasesClientProps) {
       {},
     );
   }, [analysis]);
+  const analysisMetadata = analysis?.analysis;
   const analysisModeMessage =
-    analysis?.analysis?.mode === "real"
+    analysisMetadata?.mode === "real"
       ? "当前案件主线由 DeepSeek 分析生成。"
-      : "当前使用 Demo / mock AI 分析结果。";
+      : analysisMetadata?.mode === "fallback"
+        ? "DeepSeek 未完成真实分析，已安全回退到 mock 分析结果。"
+        : "当前使用 Demo / mock AI 分析结果。";
 
   if (isLoading) {
     return (
@@ -169,6 +172,37 @@ export function CasesClient({ paperId }: CasesClientProps) {
               </span>
             ) : null}
           </div>
+          {analysisMetadata ? (
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-[#52635d]">
+              <span className="border border-[#c7cec4] bg-white/70 px-2 py-1">
+                mode: {analysisMetadata.mode}
+              </span>
+              <span className="border border-[#c7cec4] bg-white/70 px-2 py-1">
+                provider: {analysisMetadata.provider}
+              </span>
+              <span className="border border-[#c7cec4] bg-white/70 px-2 py-1">
+                model: {analysisMetadata.model_label}
+              </span>
+              {typeof analysisMetadata.input_char_count === "number" ? (
+                <span className="border border-[#c7cec4] bg-white/70 px-2 py-1">
+                  input: {analysisMetadata.input_char_count}
+                  {typeof analysisMetadata.input_char_limit === "number"
+                    ? ` / ${analysisMetadata.input_char_limit}`
+                    : ""}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          {analysisMetadata?.fallback_reason ? (
+            <div className="mt-3 border-l-4 border-[#9a4b2e] bg-[#f4ede8] px-4 py-3 text-sm leading-6 text-[#4d3329]">
+              fallback_reason: {analysisMetadata.fallback_reason}
+            </div>
+          ) : null}
+          {analysisMetadata?.warnings?.length ? (
+            <div className="mt-3 border border-[#d9dfd5] bg-[#fbfcfa] px-4 py-3 text-sm leading-6 text-[#52635d]">
+              {analysisMetadata.warnings.join(" ")}
+            </div>
+          ) : null}
         </section>
 
         <section className="py-10">

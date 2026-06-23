@@ -5,6 +5,7 @@ import type { Paper } from "@/types/paper";
 export type AiProvider = "mock" | "openai" | "qwen" | "deepseek" | "custom";
 
 export type AiMode = "mock" | "real";
+export type AnalysisResultMode = "mock" | "real" | "fallback";
 
 export interface PaperAnalysisInput {
   paperId: string;
@@ -18,11 +19,14 @@ export interface PaperAnalysisOutput {
   cases: DetectiveCase[];
   evidence_items: EvidenceItem[];
   metadata: {
-    mode: "mock" | "real";
+    mode: AnalysisResultMode;
     provider: AiProvider;
     model_label: string;
     generated_at: string;
     warnings?: string[];
+    fallback_reason?: string;
+    input_char_count?: number;
+    input_char_limit?: number;
   };
 }
 

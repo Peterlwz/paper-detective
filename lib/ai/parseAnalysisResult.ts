@@ -38,8 +38,14 @@ export function parsePaperAnalysisResult(raw: unknown): PaperAnalysisOutput {
   assertString(metadata.model_label, "metadata.model_label");
   assertString(metadata.generated_at, "metadata.generated_at");
 
-  if (metadata.mode !== "mock" && metadata.mode !== "real") {
-    throw new Error("AI 分析结果格式错误：metadata.mode 必须是 mock 或 real。");
+  if (
+    metadata.mode !== "mock" &&
+    metadata.mode !== "real" &&
+    metadata.mode !== "fallback"
+  ) {
+    throw new Error(
+      "AI 分析结果格式错误：metadata.mode 必须是 mock、real 或 fallback。",
+    );
   }
 
   if (

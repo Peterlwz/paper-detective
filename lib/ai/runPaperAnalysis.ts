@@ -9,6 +9,8 @@ import {
   truncateForLowCost,
 } from "@/lib/ai/prompts";
 import type {
+  AiProvider,
+  AnalysisResultMode,
   PaperAnalysisInput,
   PaperAnalysisOutput,
 } from "@/lib/ai/types";
@@ -23,17 +25,36 @@ function getNumberEnv(name: string, defaultValue: number): number {
   return value;
 }
 
-function createMockAnalysisOutput(warnings: string[]): PaperAnalysisOutput {
+function createMockAnalysisOutput({
+  warnings,
+  mode = "mock",
+  provider = "mock",
+  modelLabel = "Paper Detective Mock Analyst",
+  fallbackReason,
+  inputCharCount,
+  inputCharLimit,
+}: {
+  warnings: string[];
+  mode?: AnalysisResultMode;
+  provider?: AiProvider;
+  modelLabel?: string;
+  fallbackReason?: string;
+  inputCharCount?: number;
+  inputCharLimit?: number;
+}): PaperAnalysisOutput {
   return parsePaperAnalysisResult({
     paper: mockPaper,
     cases: mockCases,
     evidence_items: mockEvidenceItems,
     metadata: {
-      mode: "mock",
-      provider: "mock",
-      model_label: "Paper Detective Mock Analyst",
+      mode,
+      provider,
+      model_label: modelLabel,
       generated_at: new Date().toISOString(),
       warnings,
+      fallback_reason: fallbackReason,
+      input_char_count: inputCharCount,
+      input_char_limit: inputCharLimit,
     },
   });
 }
@@ -99,15 +120,27 @@ function normalizeDeepSeekPayload(raw: unknown): Record<string, unknown> {
   };
 }
 
-function getDeepSeekFailureWarning(error: unknown): string {
+function getDeepSeekFailureReason(error: unknown): string {
+  if (error instanceof Error && error.message.includes("请求超时")) {
+    return "DeepSeek request timed out.";
+  }
+
+  if (error instanceof Error && error.message.includes("status=")) {
+    const statusMatch = error.message.match(/status=(\d+)/);
+
+    return statusMatch
+      ? `DeepSeek API request failed with status ${statusMatch[1]}.`
+      : "DeepSeek API request failed.";
+  }
+
   if (
     error instanceof SyntaxError ||
     (error instanceof Error && error.message.includes("AI 分析结果格式错误"))
   ) {
-    return "DeepSeek JSON 解析失败，当前返回 mock 分析结果。";
+    return "DeepSeek JSON parse or schema validation failed.";
   }
 
-  return "DeepSeek 调用失败，已回退到 mock 分析结果。";
+  return "DeepSeek request failed.";
 }
 
 export async function runPaperAnalysis(
@@ -115,33 +148,60 @@ export async function runPaperAnalysis(
 ): Promise<PaperAnalysisOutput> {
   const mode = getAiMode();
   const provider = getAiProvider();
+  const model = process.env.DEEPSEEK_MODEL ?? "deepseek-chat";
+  const maxInputChars = getNumberEnv("DEEPSEEK_MAX_INPUT_CHARS", 20000);
+  const inputCharCount = input.extractedText?.length ?? 0;
 
   if (mode !== "real") {
-    return createMockAnalysisOutput([
-      "未启用真实 AI，当前返回 mock 分析结果。",
-    ]);
+    return createMockAnalysisOutput({
+      warnings: ["未启用真实 AI，当前返回 mock 分析结果。"],
+      inputCharCount,
+      inputCharLimit: maxInputChars,
+    });
   }
 
   if (provider !== "deepseek") {
-    return createMockAnalysisOutput([
-      "AI provider 未配置为 DeepSeek，当前返回 mock 分析结果。",
-    ]);
+    const fallbackReason =
+      "PAPER_DETECTIVE_AI_PROVIDER is not configured as deepseek.";
+
+    return createMockAnalysisOutput({
+      warnings: ["AI provider 未配置为 DeepSeek，当前返回 mock 分析结果。"],
+      mode: "fallback",
+      provider: "mock",
+      fallbackReason,
+      inputCharCount,
+      inputCharLimit: maxInputChars,
+    });
   }
 
   if (!process.env.DEEPSEEK_API_KEY) {
-    return createMockAnalysisOutput([
-      "DeepSeek API key 未配置，当前返回 mock 分析结果。",
-    ]);
+    const fallbackReason = "DEEPSEEK_API_KEY is not configured.";
+
+    return createMockAnalysisOutput({
+      warnings: ["DeepSeek API key 未配置，当前返回 mock 分析结果。"],
+      mode: "fallback",
+      provider: "deepseek",
+      modelLabel: model,
+      fallbackReason,
+      inputCharCount,
+      inputCharLimit: maxInputChars,
+    });
   }
 
   if (!input.extractedText?.trim()) {
-    return createMockAnalysisOutput([
-      "当前没有可用于真实 AI 分析的论文文本，当前返回 mock 分析结果。",
-    ]);
+    const fallbackReason = "No extracted text is available for analysis.";
+
+    return createMockAnalysisOutput({
+      warnings: ["当前没有可用于真实 AI 分析的论文文本，当前返回 mock 分析结果。"],
+      mode: "fallback",
+      provider: "deepseek",
+      modelLabel: model,
+      fallbackReason,
+      inputCharCount,
+      inputCharLimit: maxInputChars,
+    });
   }
 
-  const model = process.env.DEEPSEEK_MODEL ?? "deepseek-chat";
-  const maxInputChars = getNumberEnv("DEEPSEEK_MAX_INPUT_CHARS", 60000);
   const timeoutMs = getNumberEnv("DEEPSEEK_TIMEOUT_MS", 45000);
   const truncatedInput = truncateForLowCost(input.extractedText, maxInputChars);
   const warnings = truncatedInput.wasTruncated
@@ -151,6 +211,14 @@ export async function runPaperAnalysis(
     : undefined;
 
   try {
+    console.info("DeepSeek analysis started", {
+      mode,
+      provider,
+      model,
+      input_char_count: truncatedInput.usedChars,
+      input_char_limit: maxInputChars,
+    });
+
     const prompt = buildDeepSeekPaperAnalysisPrompt({
       paperId: input.paperId,
       fileName: input.fileName,
@@ -171,9 +239,28 @@ export async function runPaperAnalysis(
         model_label: model,
         generated_at: new Date().toISOString(),
         warnings,
+        input_char_count: truncatedInput.usedChars,
+        input_char_limit: maxInputChars,
       },
     });
   } catch (error) {
-    return createMockAnalysisOutput([getDeepSeekFailureWarning(error)]);
+    const fallbackReason = getDeepSeekFailureReason(error);
+
+    console.warn("DeepSeek analysis fallback", {
+      reason: fallbackReason,
+      model,
+      input_char_count: truncatedInput.usedChars,
+      input_char_limit: maxInputChars,
+    });
+
+    return createMockAnalysisOutput({
+      warnings: ["DeepSeek 调用失败，已回退到 mock 分析结果。"],
+      mode: "fallback",
+      provider: "deepseek",
+      modelLabel: model,
+      fallbackReason,
+      inputCharCount: truncatedInput.usedChars,
+      inputCharLimit: maxInputChars,
+    });
   }
 }

@@ -19,16 +19,22 @@ export interface UploadPaperResponse {
   reader: ReadablePaperContent["stats"];
   analysis_mode: PaperAnalysisMetadata["mode"];
   analysis_provider: AiProvider;
+  analysis_fallback_reason?: string;
+  analysis_input_char_count?: number;
+  analysis_input_char_limit?: number;
   warnings: string[];
 }
 
 export interface PaperAnalysisMetadata {
-  mode: "mock" | "real";
+  mode: "mock" | "real" | "fallback";
   provider: AiProvider;
   generated_at: string;
   model_label: string;
   warnings?: string[];
   note?: string;
+  fallback_reason?: string;
+  input_char_count?: number;
+  input_char_limit?: number;
 }
 
 export interface PaperAnalysisResponse {

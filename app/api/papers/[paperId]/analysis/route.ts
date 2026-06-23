@@ -45,6 +45,20 @@ function buildDemoExtractedText(): string {
   ].join("\n");
 }
 
+function getAnalysisNote(
+  mode: NonNullable<PaperAnalysisResponse["analysis"]>["mode"],
+): string {
+  if (mode === "real") {
+    return "当前结果由 DeepSeek 文本结构化分析生成。";
+  }
+
+  if (mode === "fallback") {
+    return "DeepSeek 未完成真实分析，当前已安全回退到 mock 分析结果。";
+  }
+
+  return "当前结果由 mock AI pipeline 生成，用于演示完整产品流程。";
+}
+
 export async function GET(request: Request, { params }: AnalysisRouteContext) {
   const { paperId } = await params;
   const cachedAnalysis = getCachedPaperAnalysis(paperId);
@@ -58,10 +72,7 @@ export async function GET(request: Request, { params }: AnalysisRouteContext) {
       evidence_items: analysisOutput.evidence_items,
       analysis: {
         ...analysisOutput.metadata,
-        note:
-          analysisOutput.metadata.mode === "real"
-            ? "当前结果由 DeepSeek 文本结构化分析生成。"
-            : "当前结果由 mock AI pipeline 生成，用于演示完整产品流程。",
+        note: getAnalysisNote(analysisOutput.metadata.mode),
       },
       extraction: cachedAnalysis.extractedTextStats,
       reader: cachedAnalysis.readableContent,
@@ -90,10 +101,7 @@ export async function GET(request: Request, { params }: AnalysisRouteContext) {
       evidence_items: analysisResult.evidence_items,
       analysis: {
         ...analysisResult.metadata,
-        note:
-          analysisResult.metadata.mode === "real"
-            ? "当前结果由 DeepSeek 文本结构化分析生成。"
-            : "当前结果由 mock AI pipeline 生成，用于演示完整产品流程。",
+        note: getAnalysisNote(analysisResult.metadata.mode),
       },
     });
   } catch (error) {

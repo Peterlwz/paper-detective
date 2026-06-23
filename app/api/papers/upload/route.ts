@@ -126,6 +126,9 @@ export async function POST(request: Request) {
     reader: readableContent.stats,
     analysis_mode: analysisOutput.metadata.mode,
     analysis_provider: analysisOutput.metadata.provider,
+    analysis_fallback_reason: analysisOutput.metadata.fallback_reason,
+    analysis_input_char_count: analysisOutput.metadata.input_char_count,
+    analysis_input_char_limit: analysisOutput.metadata.input_char_limit,
     warnings: analysisOutput.metadata.warnings ?? [],
   });
 }
