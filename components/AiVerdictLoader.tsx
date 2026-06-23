@@ -122,10 +122,15 @@ export function AiVerdictLoader({ caseId, paperId }: AiVerdictLoaderProps) {
     );
   }
 
+  const analysisCases = Array.isArray(analysis?.cases) ? analysis.cases : [];
+  const analysisEvidenceItems = Array.isArray(analysis?.evidence_items)
+    ? analysis.evidence_items
+    : [];
   const detectiveCase =
-    analysis?.cases.find((item) => item.case_id === caseId) ?? null;
-  const evidenceList =
-    analysis?.evidence_items.filter((item) => item.case_id === caseId) ?? [];
+    analysisCases.find((item) => item.case_id === caseId) ?? null;
+  const evidenceList = analysisEvidenceItems.filter(
+    (item) => item.case_id === caseId,
+  );
 
   if (error || !analysis || !detectiveCase) {
     return (

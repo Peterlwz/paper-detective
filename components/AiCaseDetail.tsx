@@ -60,12 +60,21 @@ function TagList({ label, items }: { label: string; items: string[] }) {
   );
 }
 
+function safeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map(String).map((item) => item.trim()).filter(Boolean)
+    : [];
+}
+
 export function AiCaseDetail({
   paperId,
   detectiveCase,
   evidenceList,
   readableContent,
 }: AiCaseDetailProps) {
+  const safeEvidenceList = Array.isArray(evidenceList) ? evidenceList : [];
+  const involvedFigures = safeStringArray(detectiveCase.involved_figures);
+  const experimentTypes = safeStringArray(detectiveCase.experiment_types);
   const [foundEvidenceIds, setFoundEvidenceIds] = useState<string[]>([]);
   const [selectedEvidenceId, setSelectedEvidenceId] = useState<string | null>(
     null,
@@ -75,12 +84,15 @@ export function AiCaseDetail({
   const selectedEvidence = useMemo(
     () =>
       selectedEvidenceId
-        ? evidenceList.find((evidence) => evidence.id === selectedEvidenceId)
+        ? safeEvidenceList.find(
+            (evidence) => evidence.id === selectedEvidenceId,
+          )
         : undefined,
-    [evidenceList, selectedEvidenceId],
+    [safeEvidenceList, selectedEvidenceId],
   );
   const isCaseComplete =
-    evidenceList.length > 0 && foundEvidenceIds.length === evidenceList.length;
+    safeEvidenceList.length > 0 &&
+    foundEvidenceIds.length === safeEvidenceList.length;
 
   useEffect(() => {
     setFoundEvidenceIds([]);
@@ -99,7 +111,7 @@ export function AiCaseDetail({
   }) {
     const result = matchReaderEvidence({
       clickedText: text,
-      evidenceList,
+      evidenceList: safeEvidenceList,
     });
     const matchedEvidenceId = result.matchedEvidence?.id;
 
@@ -165,7 +177,7 @@ export function AiCaseDetail({
               label="难度"
               value={difficultyLabels[detectiveCase.difficulty]}
             />
-            <InfoItem label="证据需求" value={`${evidenceList.length} 条`} />
+            <InfoItem label="证据需求" value={`${safeEvidenceList.length} 条`} />
             <InfoItem
               label="预计阅读"
               value={`${detectiveCase.estimated_minutes} 分钟`}
@@ -180,13 +192,13 @@ export function AiCaseDetail({
             <div className="border border-[#cfd7cc] bg-white/75 p-5">
               <TagList
                 label="涉及图表"
-                items={detectiveCase.involved_figures}
+                items={involvedFigures}
               />
             </div>
             <div className="border border-[#cfd7cc] bg-white/75 p-5">
               <TagList
                 label="实验类型"
-                items={detectiveCase.experiment_types}
+                items={experimentTypes}
               />
             </div>
           </div>
@@ -194,7 +206,7 @@ export function AiCaseDetail({
 
         <section className="py-6">
           <AiEvidenceProgress
-            evidenceList={evidenceList}
+            evidenceList={safeEvidenceList}
             foundEvidenceIds={foundEvidenceIds}
             selectedEvidenceId={selectedEvidenceId}
             onSelectEvidence={setSelectedEvidenceId}
@@ -223,7 +235,7 @@ export function AiCaseDetail({
             <RealPaperViewer
               paperId={paperId}
               readableContent={readableContent}
-              evidenceList={evidenceList}
+              evidenceList={safeEvidenceList}
               foundEvidenceIds={foundEvidenceIds}
               selectedEvidenceId={selectedEvidenceId}
               onSentenceClick={handleSentenceClick}

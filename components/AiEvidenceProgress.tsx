@@ -17,9 +17,13 @@ export function AiEvidenceProgress({
   selectedEvidenceId,
   onSelectEvidence,
 }: AiEvidenceProgressProps) {
-  const foundEvidenceIdSet = new Set(foundEvidenceIds);
-  const foundCount = foundEvidenceIds.length;
-  const totalCount = evidenceList.length;
+  const safeEvidenceList = Array.isArray(evidenceList) ? evidenceList : [];
+  const safeFoundEvidenceIds = Array.isArray(foundEvidenceIds)
+    ? foundEvidenceIds
+    : [];
+  const foundEvidenceIdSet = new Set(safeFoundEvidenceIds);
+  const foundCount = safeFoundEvidenceIds.length;
+  const totalCount = safeEvidenceList.length;
   const progressPercent =
     totalCount > 0 ? Math.round((foundCount / totalCount) * 100) : 0;
 
@@ -49,7 +53,7 @@ export function AiEvidenceProgress({
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {evidenceList.map((evidence, index) => {
+        {safeEvidenceList.map((evidence, index) => {
           const isFound = foundEvidenceIdSet.has(evidence.id);
           const isSelected = selectedEvidenceId === evidence.id;
 

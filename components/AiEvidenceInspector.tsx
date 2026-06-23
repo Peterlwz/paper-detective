@@ -34,6 +34,12 @@ export function AiEvidenceInspector({
   lastClickResult,
 }: AiEvidenceInspectorProps) {
   if (evidence) {
+    const confidence =
+      typeof evidence.confidence === "number" &&
+      Number.isFinite(evidence.confidence)
+        ? evidence.confidence
+        : 0.5;
+
     return (
       <aside className="border border-[#cfd7cc] bg-white/80 p-5 shadow-[0_14px_40px_rgba(25,35,31,0.06)] lg:sticky lg:top-6">
         <div className="border-b border-[#d9dfd5] pb-4">
@@ -58,7 +64,7 @@ export function AiEvidenceInspector({
                 强度 {getEvidenceStrengthLabel(evidence.strength)}
               </span>
               <span className="border border-[#c7cec4] bg-[#fbfcfa] px-2 py-1 text-[#52635d]">
-                置信度 {Math.round(evidence.confidence * 100)}%
+                置信度 {Math.round(confidence * 100)}%
               </span>
             </div>
           </div>
@@ -72,23 +78,21 @@ export function AiEvidenceInspector({
             </div>
           </div>
 
-          {evidence.text_anchor ? (
-            <div className="border-l-4 border-[#c6b16b] bg-[#fbf6df] px-4 py-3">
-              <div className="text-xs font-semibold tracking-[0.14em] text-[#7a6630] uppercase">
-                Text Anchor
-              </div>
-              <p className="mt-2 text-sm leading-7 text-[#4c4224]">
-                {evidence.text_anchor}
-              </p>
+          <div className="border-l-4 border-[#c6b16b] bg-[#fbf6df] px-4 py-3">
+            <div className="text-xs font-semibold tracking-[0.14em] text-[#7a6630] uppercase">
+              Text Anchor
             </div>
-          ) : null}
+            <p className="mt-2 text-sm leading-7 text-[#4c4224]">
+              {evidence.text_anchor || "No text anchor available"}
+            </p>
+          </div>
 
           <div className="border border-[#d9dfd5] bg-[#fbfcfa] px-4 py-3">
             <div className="text-xs font-semibold tracking-[0.14em] text-[#6d7a75] uppercase">
               解释
             </div>
             <p className="mt-2 text-sm leading-7 text-[#364641]">
-              {evidence.explanation}
+              {evidence.explanation || "No explanation available."}
             </p>
           </div>
 
@@ -97,7 +101,7 @@ export function AiEvidenceInspector({
               局限性
             </div>
             <p className="mt-2 text-sm leading-7 text-[#4d3329]">
-              {evidence.limitation}
+              {evidence.limitation || "No limitation available."}
             </p>
           </div>
         </div>

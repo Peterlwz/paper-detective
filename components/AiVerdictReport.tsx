@@ -55,18 +55,24 @@ export function AiVerdictReport({
   analysisMode,
   analysisProvider,
 }: AiVerdictReportProps) {
-  const strengthCounts = evidenceList.reduce(
+  const safeEvidenceList = Array.isArray(evidenceList) ? evidenceList : [];
+  const strengthCounts = safeEvidenceList.reduce(
     (counts, evidence) => ({
       ...counts,
       [evidence.strength]: counts[evidence.strength] + 1,
     }),
     { strong: 0, medium: 0, weak: 0 },
   );
-  const limitationCount = evidenceList.filter(
-    (evidence) => evidence.type === "limitation" || evidence.limitation.trim(),
+  const limitationCount = safeEvidenceList.filter(
+    (evidence) =>
+      evidence.type === "limitation" ||
+      (typeof evidence.limitation === "string" && evidence.limitation.trim()),
   ).length;
-  const limitations = evidenceList
-    .filter((evidence) => evidence.limitation.trim())
+  const limitations = safeEvidenceList
+    .filter(
+      (evidence) =>
+        typeof evidence.limitation === "string" && evidence.limitation.trim(),
+    )
     .map((evidence) => ({
       id: evidence.id,
       title: evidence.title,
@@ -130,9 +136,16 @@ export function AiVerdictReport({
 
           <section className="border border-[#cfd7cc] bg-white/80 p-6">
             <SectionTitle eyebrow="Evidence Summary" title="证据链摘要" />
-            {evidenceList.length > 0 ? (
+            {safeEvidenceList.length > 0 ? (
               <div className="mt-5 space-y-4">
-                {evidenceList.map((evidence) => (
+                {safeEvidenceList.map((evidence) => {
+                  const confidence =
+                    typeof evidence.confidence === "number" &&
+                    Number.isFinite(evidence.confidence)
+                      ? evidence.confidence
+                      : 0.5;
+
+                  return (
                   <article
                     key={evidence.id}
                     className="border border-[#d9dfd5] bg-[#fbfcfa] p-4"
@@ -147,12 +160,12 @@ export function AiVerdictReport({
                         </h3>
                       </div>
                       <span className="shrink-0 border border-[#1d352f] bg-white px-2 py-1 text-xs font-semibold text-[#1d352f]">
-                        置信度 {Math.round(evidence.confidence * 100)}%
+                        置信度 {Math.round(confidence * 100)}%
                       </span>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
                       <span className="border border-[#c7cec4] bg-white px-2 py-1 text-[#52635d]">
-                        {sourceTypeLabels[evidence.source_type]}
+                        {sourceTypeLabels[evidence.source_type] ?? "正文"}
                       </span>
                       <span className="border border-[#c7cec4] bg-white px-2 py-1 text-[#52635d]">
                         {evidence.source_label}
@@ -168,10 +181,11 @@ export function AiVerdictReport({
                       </span>
                     </div>
                     <p className="mt-3 text-sm leading-7 text-[#364641]">
-                      {evidence.explanation}
+                      {evidence.explanation || "No explanation available."}
                     </p>
                   </article>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-5 border border-[#d9dfd5] bg-[#fbfcfa] px-4 py-4 text-sm leading-7 text-[#52635d]">

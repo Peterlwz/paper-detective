@@ -14,6 +14,21 @@ interface CasesClientProps {
   paperId: string;
 }
 
+function safeStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map(String).map((item) => item.trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(/[,;；、\n\r]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 export function CasesClient({ paperId }: CasesClientProps) {
   const [analysis, setAnalysis] = useState<PaperAnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,7 +79,11 @@ export function CasesClient({ paperId }: CasesClientProps) {
   }, [paperId]);
 
   const evidenceCountByCaseId = useMemo(() => {
-    return (analysis?.evidence_items ?? []).reduce<Record<string, number>>(
+    const evidenceItems = Array.isArray(analysis?.evidence_items)
+      ? analysis.evidence_items
+      : [];
+
+    return evidenceItems.reduce<Record<string, number>>(
       (counts, evidence) => {
         counts[evidence.case_id] = (counts[evidence.case_id] ?? 0) + 1;
         return counts;
@@ -73,6 +92,9 @@ export function CasesClient({ paperId }: CasesClientProps) {
     );
   }, [analysis]);
   const analysisMetadata = analysis?.analysis;
+  const safeCases = Array.isArray(analysis?.cases) ? analysis.cases : [];
+  const authors = safeStringArray(analysis?.paper.authors);
+  const warningMessages = safeStringArray(analysisMetadata?.warnings);
   const analysisModeMessage =
     analysisMetadata?.mode === "real"
       ? "当前案件主线由 DeepSeek 分析生成。"
@@ -160,7 +182,7 @@ export function CasesClient({ paperId }: CasesClientProps) {
                 Authors
               </div>
               <div className="text-[#24342f]">
-                {analysis.paper.authors.join(", ")}
+                {authors.length > 0 ? authors.join(", ") : "Unknown authors"}
               </div>
             </div>
           </div>
@@ -198,9 +220,9 @@ export function CasesClient({ paperId }: CasesClientProps) {
               fallback_reason: {analysisMetadata.fallback_reason}
             </div>
           ) : null}
-          {analysisMetadata?.warnings?.length ? (
+          {warningMessages.length > 0 ? (
             <div className="mt-3 border border-[#d9dfd5] bg-[#fbfcfa] px-4 py-3 text-sm leading-6 text-[#52635d]">
-              {analysisMetadata.warnings.join(" ")}
+              {warningMessages.join(" ")}
             </div>
           ) : null}
         </section>
@@ -212,7 +234,7 @@ export function CasesClient({ paperId }: CasesClientProps) {
                 Case Lines
               </p>
               <h2 className="text-3xl font-semibold text-[#14211d]">
-                已拆出 {analysis.cases.length} 条案件主线
+                已拆出 {safeCases.length} 条案件主线
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[#52635d]">
                 同一篇论文可以拆成多条科学案件主线。每条主线对应不同
@@ -225,9 +247,15 @@ export function CasesClient({ paperId }: CasesClientProps) {
           </div>
 
           <div className="mt-8 grid gap-5">
-            {analysis.cases.map((detectiveCase, index) => {
+            {safeCases.map((detectiveCase, index) => {
               const evidenceCount =
                 evidenceCountByCaseId[detectiveCase.case_id] ?? 0;
+              const involvedFigures = safeStringArray(
+                detectiveCase.involved_figures,
+              );
+              const experimentTypes = safeStringArray(
+                detectiveCase.experiment_types,
+              );
 
               return (
                 <article
@@ -241,7 +269,7 @@ export function CasesClient({ paperId }: CasesClientProps) {
                           Case {String(index + 1).padStart(2, "0")}
                         </span>
                         <span className="border border-[#c7cec4] bg-[#edf2ef] px-3 py-1 text-xs font-medium text-[#1d352f]">
-                          难度 {difficultyLabels[detectiveCase.difficulty]}
+                          难度 {difficultyLabels[detectiveCase.difficulty] ?? "中等"}
                         </span>
                       </div>
                       <h3 className="text-2xl font-semibold leading-snug text-[#14211d]">
@@ -301,14 +329,18 @@ export function CasesClient({ paperId }: CasesClientProps) {
                         涉及图表
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {detectiveCase.involved_figures.map((figure) => (
+                        {involvedFigures.length > 0 ? (
+                          involvedFigures.map((figure) => (
                           <span
                             key={figure}
                             className="border border-[#c7cec4] bg-[#fbfcfa] px-3 py-1 text-sm text-[#364641]"
                           >
                             {figure}
                           </span>
-                        ))}
+                          ))
+                        ) : (
+                          <span className="text-sm text-[#6d7a75]">暂无</span>
+                        )}
                       </div>
                     </div>
                     <div>
@@ -316,14 +348,18 @@ export function CasesClient({ paperId }: CasesClientProps) {
                         实验类型
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {detectiveCase.experiment_types.map((experiment) => (
+                        {experimentTypes.length > 0 ? (
+                          experimentTypes.map((experiment) => (
                           <span
                             key={experiment}
                             className="border border-[#d4dbd1] bg-[#edf2ef] px-3 py-1 text-sm text-[#364641]"
                           >
                             {experiment}
                           </span>
-                        ))}
+                          ))
+                        ) : (
+                          <span className="text-sm text-[#6d7a75]">暂无</span>
+                        )}
                       </div>
                     </div>
                   </div>
